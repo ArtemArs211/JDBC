@@ -28,6 +28,7 @@ public class UserDaoJDBCImpl implements UserDao {
     public void dropUsersTable() {
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate("DROP TABLE IF EXISTS users");
+            System.out.println("table dropped");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -56,16 +57,23 @@ public class UserDaoJDBCImpl implements UserDao {
     @Override
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
-        try(Statement statement = connection.createStatement()) {
-           ResultSet resultSet = statement.executeQuery("SELECT * FROM tabletwo");
-           while (resultSet.next()) {
-               User user = new User();
-               user.setId(resultSet.getLong("id"));
-               user.setName(resultSet.getString("firstName"));
-               user.setLastName(resultSet.getString("lastName"));
-               user.setAge(resultSet.getByte("age"));
-               users.add(user);
-           }
+        try {
+            String userId = "1";
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM tabletwo WHERE id = ?");
+            preparedStatement.setString(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                long id = resultSet.getLong("id");
+                String name = resultSet.getString("firstName");
+                String lastName = resultSet.getString("lastName");
+                byte age = resultSet.getByte("age");
+                User user = new User(name, lastName, age);
+                user.setId(id);
+                users.add(user);
+            }
+            connection.commit();
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -73,8 +81,10 @@ public class UserDaoJDBCImpl implements UserDao {
     }
     @Override
     public void cleanUsersTable() {
+        String cleanTable = "DROP TABLE IF EXISTS tabletwo";
        try (Statement statement = connection.createStatement()) {
-           statement.executeUpdate("DROP TABLE IF EXISTS users");
+           statement.execute(cleanTable);
+           System.out.println("clean table success");
        } catch (SQLException e) {
            throw new RuntimeException(e);
        }
